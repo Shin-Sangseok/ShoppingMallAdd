@@ -1,3 +1,5 @@
+import pandas as pd
+
 import shop_dao_class1
 
 #from db import dao
@@ -7,7 +9,7 @@ import shop_dao_class1
 
 if __name__ == '__main__':
     dao = shop_dao_class1.DAO()
-    dao.recom_read()
-
-
-
+    recom_result= dao.recom_read()
+    recom_columns = ['product_idx', 'user_id', 'purchase_quantity', 'user_age']
+    df = pd.DataFrame(data = recom_result, columns=recom_columns)
+    print(df)
