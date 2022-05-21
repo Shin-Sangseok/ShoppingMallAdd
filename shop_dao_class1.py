@@ -1,6 +1,7 @@
 import pymysql
 from sklearn import neighbors
 from sklearn.metrics import accuracy_score
+from sklearn.metrics.pairwise import cosine_similarity
 
 import numpy as np
 import pandas as pd
@@ -157,6 +158,20 @@ class DAO:
                   mean_rating = 3.0
                 return mean_rating
 
+        def recom_product(self,user_id, product_idx, neighbor_size = 30):
+            user_product= rating_matrix.loc[user_id].copy()
+            for product in rating_matrix:
+                #값이 null이 아닌 경우 - 상품을 이미 산 경우 이기 떄문에 제외
+                if pd.notnull(user_product.loc[product]):
+                    user_product.loc[product] = 0
+                #null인 경우 - ck_knn()함수 호출해서 구매자의 예상 개수 예상
+                else:
+                    user_product.loc[product] = self.cf_knn(user_id, product_idx, neighbor_size)
+            product_sort = user_product.sort_values(ascending=False)[:product_idx]
+            recom_products = purchase_df.loc[product_sort.index]
+            recommendations = recom_products['product_idx']
+            return recommendations
+
 
 
 
@@ -228,8 +243,35 @@ if __name__ == '__main__':
 
         #print(d.CF_sample('1234','150'))
         #print(d.score(d.CF_sample('1234','1')))
-        print('CF_sample의 score:',d.score(d.cf_sample))
+        print('cf_sample의 score:',d.score(d.cf_sample))
         print('cf_knn의 score', d.score2(d.cf_knn,neighbor_size=30))
+
+        print('---------------------------------------------------------------------------------------------------------')
+
+        #columns는 선택 적용 관심을 가지는 values를 추가로 구분하기 위해 선택하는 옵션
+        #전체 데이터 full matrix , cosine similarity
+        product_matrix= purchase_df.pivot_table(values = 'purchase_quantity', index = 'user_id',columns='product_idx')
+        #print('product_matrix', product_matrix)
+
+        #코사인 유사도란?
+        #벡터와 벡터간의 유사도를 비교할 때 두 벡터 간의 사잇값을 구해서 얼마나 유사한지 수치로 나타낸 것
+        #벡터 방향이 비슷할수록 두 벡터는 서로 유사하며, 벡터 방향이 90도 일 때는
+        #두 벡터간의 관련성이 없으며, 벡터 방향이 반대가 될수록 두 벡터는 반대 관계
+
+        print('-----------------------------------------------------------------------')
+        matrix_dummy = product_matrix.copy().fillna(0)
+        user_similarity = cosine_similarity(matrix_dummy, matrix_dummy)
+        #print('user_similairty', user_similarity)
+        #user_similarity = pd.DataFrame(user_similarity, index = cosine_similarity.index, columns=product_matrix.index)\
+
+        print(d.recom_product(user_id='1234', product_idx=1, neighbor_size=20))
+
+
+
+
+
+
+
 
 
 
