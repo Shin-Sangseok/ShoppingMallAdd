@@ -2,6 +2,7 @@ import pymysql
 from sklearn import neighbors
 from sklearn.metrics import accuracy_score
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import LabelEncoder
 
 import numpy as np
 import pandas as pd
@@ -169,7 +170,8 @@ class DAO:
                     user_product.loc[product] = self.cf_knn(user_id, product_idx, neighbor_size)
             product_sort = user_product.sort_values(ascending=False)[:product_idx]
             recom_products = purchase_df.loc[product_sort.index]
-            recommendations = recom_products['product_idx']
+            #
+            recommendations = recom_products['purchase_quantity']
             return recommendations
 
 
@@ -210,7 +212,32 @@ if __name__ == '__main__':
         #purchase_info dataFrame
         purchase_df = pd.DataFrame(data = purchase_result, columns=p_cols)
         print(member_df)
+        print('================================================================')
+
+
         print(purchase_df)
+
+        #LabelEncoding으로 purchase_df['user_id'] 전처리
+        le = LabelEncoder()
+        le.fit(purchase_df['user_id'])
+
+        #purchasedf2--> user_id 숫자형으로 변환, purchase_df3 --> product_idx, product_quantity
+        purchase_df2 = le.transform(purchase_df['user_id'])
+        purchase_df3 = purchase_df.drop(columns='user_id')
+
+        #print('purchase_df3', purchase_df3)
+        #print(purchase_df2)
+
+        purchase_df2 = pd.DataFrame(purchase_df2, columns=['user_id'])
+
+        #print(purchase_df2)
+
+        #pd.concat으로 분리 시킨것 다시 결합.
+        purchase_df= pd.concat([purchase_df2, purchase_df3], axis=1)
+        print('★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★')
+        print(purchase_df)
+
+
 
         x = purchase_df.copy()
         y = purchase_df['user_id']
@@ -246,7 +273,7 @@ if __name__ == '__main__':
         print('cf_sample의 score:',d.score(d.cf_sample))
         print('cf_knn의 score', d.score2(d.cf_knn,neighbor_size=30))
 
-        print('---------------------------------------------------------------------------------------------------------')
+        #print('---------------------------------------------------------------------------------------------------------')
 
         #columns는 선택 적용 관심을 가지는 values를 추가로 구분하기 위해 선택하는 옵션
         #전체 데이터 full matrix , cosine similarity
@@ -258,15 +285,18 @@ if __name__ == '__main__':
         #벡터 방향이 비슷할수록 두 벡터는 서로 유사하며, 벡터 방향이 90도 일 때는
         #두 벡터간의 관련성이 없으며, 벡터 방향이 반대가 될수록 두 벡터는 반대 관계
 
-        print('-----------------------------------------------------------------------')
+        #print('-----------------------------------------------------------------------')
         matrix_dummy = product_matrix.copy().fillna(0)
         user_similarity = cosine_similarity(matrix_dummy, matrix_dummy)
         #print('user_similairty', user_similarity)
         #user_similarity = pd.DataFrame(user_similarity, index = cosine_similarity.index, columns=product_matrix.index)\
 
-        print(d.recom_product(user_id='1234', product_idx=1, neighbor_size=20))
+        #1번 사용자에 대해서 5개의 상품을 추천했을 때
+        #1번 사용자가 사지 않은 상품들 중에서
+        #추천 받은 상품 몇개를 구매할 것으로 예상되는가?
+        #여기서 product_idx ==> 상품 추천 개수를 의미.
 
-
+        print(d.recom_product(user_id=1, product_idx=5, neighbor_size=20))
 
 
 
