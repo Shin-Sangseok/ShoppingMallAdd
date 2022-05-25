@@ -1,5 +1,6 @@
 from sklearn.tree import DecisionTreeClassifier
 import pandas as pd
+import numpy as np
 import os
 import openpyxl
 import matplotlib as mpl
@@ -18,6 +19,7 @@ sample_data = pd.read_excel(r'C:\Users\pc\Documents\쇼핑몰_최종2.xlsx')
 
 dt_clf = DecisionTreeClassifier(random_state=156)
 params = {'max_depth': [3,6,8,10,12,14,16,18,20,22,24,26,28]}
+le = LabelEncoder()
 
 #font
 plt.rcParams["font.family"] = "Malgun Gothic"
@@ -34,7 +36,6 @@ def nullRemove(model):
 
 #Object형 수치화[라벨 인코딩]
 def obj_numeric(data):
-    le = LabelEncoder()
     data['평일휴일'] = le.fit_transform(data['평일휴일'])
     data['요일'] = le.fit_transform(data['요일'])
     data['시간대'] = le.fit_transform(data['시간대'])
@@ -50,6 +51,7 @@ def train_test_set(data):
     X=pd.DataFrame(data, columns=['CRI_YM','평일휴일','요일','시간대','성별','연령대','건수합계','네이버 태그 클릭량'])
     X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2, random_state=3)
     dt_clf.fit(X_train, y_train)
+    print('X_train', X_train, 'y_train', y_train)
     return data, X_train, X_test, y_train, y_test
 
 #결정 트리 정확도 구하는 함수
@@ -79,8 +81,39 @@ def decision_grid(dt_clf, params, X_train,y_train):
     print('결정 트리 예측 정확도:{0:.4f}'.format(dt_acc))
 
 
+def pred_tag(input_data):
+    # 예측 결과 출력
+    result = dt_clf.predict_proba([input_data])
+    if result[0][0] == 1:
+        print('예측 카테고리는 생활/사무용품입니다.')
+    elif result[0][1] == 1:
+        print('예측 카테고리는 식료품입니다. ')
+    elif result[0][2] == 1:
+        print('예측 카테고리는 애완용품입니다.')
+    elif result[0][3] == 1:
+        print('예측 카테고리는 인테리어입니다.')
+    elif result[0][4] == 1:
+        print('예측 카테고리는 취미용품입니다.')
+    elif result[0][5] == 1:
+        print('예측 카테고리는 패션입니다.')
+    elif result[0][6] == 1:
+        print('예측 카테고리는 화장품입니다.')
+
 sample_data = nullRemove(sample_data)
 sample_data = obj_numeric(sample_data)
 sample_data, X_train, X_test, y_train, y_test  = train_test_set(sample_data)
 model_acc(X_train,y_train,y_test)
 decision_grid(dt_clf,params,X_train,y_train)
+print(X_train)
+
+#user값 입력 및 예측
+print('정수형 숫자 8개를 입력해주세요! ex)1 1 1 1 1 1 1 1')
+num_list = list(map(int, input().split()))
+pred_tag(num_list)
+
+#user = np.array([num_list])
+
+#[[0.0.0.0.1.0.0.]]
+#대괄호 하나 없애는 법
+#대괄호 변수이름[0]
+
